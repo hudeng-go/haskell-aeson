@@ -1,0 +1,165 @@
+Source: haskell-aeson
+Maintainer: Debian Haskell Group <pkg-haskell-maintainers@lists.alioth.debian.org>
+Uploaders:
+ Clint Adams <clint@debian.org>,
+Priority: optional
+Section: haskell
+Rules-Requires-Root: no
+Build-Depends:
+ cdbs,
+ debhelper (>= 10),
+ ghc (>= 8.4.3),
+ ghc-prof,
+ haskell-devscripts (>= 0.15),
+ libghc-attoparsec-dev (>= 0.13.2.2),
+ libghc-attoparsec-dev (<< 0.14),
+ libghc-attoparsec-prof,
+ libghc-base-compat-batteries-dev (>= 0.10.0),
+ libghc-base-compat-batteries-dev (<< 0.12),
+ libghc-base-compat-batteries-prof,
+ libghc-contravariant-dev (>= 1.4.1),
+ libghc-contravariant-dev (<< 1.6),
+ libghc-contravariant-prof,
+ libghc-dlist-dev (>= 0.8.0.4),
+ libghc-dlist-dev (<< 0.9),
+ libghc-dlist-prof,
+ libghc-hashable-dev (>= 1.2.7.0),
+ libghc-hashable-dev (<< 1.4),
+ libghc-hashable-prof,
+ libghc-primitive-dev (>= 0.6.3.0),
+ libghc-primitive-dev (<< 0.8),
+ libghc-primitive-prof,
+ libghc-scientific-dev (>= 0.3.6.2),
+ libghc-scientific-dev (<< 0.4),
+ libghc-scientific-prof,
+ libghc-tagged-dev (>= 0.8.5),
+ libghc-tagged-dev (<< 0.9),
+ libghc-tagged-dev (>= 0.8.3),
+ libghc-tagged-prof,
+ libghc-th-abstraction-dev (>= 0.2.8.0),
+ libghc-th-abstraction-dev (<< 0.4),
+ libghc-th-abstraction-prof,
+ libghc-time-compat-dev (>= 1.9.2.2),
+ libghc-time-compat-dev (<< 1.10),
+ libghc-time-compat-prof,
+ libghc-unordered-containers-dev (>= 0.2.8.0),
+ libghc-unordered-containers-dev (<< 0.3),
+ libghc-unordered-containers-prof,
+ libghc-vector-dev (>= 0.8),
+ libghc-uuid-types-dev (>= 1.0.3),
+ libghc-uuid-types-dev (<< 1.1),
+ libghc-uuid-types-prof,
+ libghc-vector-dev (>= 0.12.0.1),
+ libghc-vector-dev (<< 0.13),
+ libghc-vector-prof,
+ libghc-diff-dev (>= 0.4),
+ libghc-diff-dev (<< 0.5),
+ libghc-diff-prof,
+ libghc-quickcheck2-dev (>= 2.10.0.1),
+ libghc-quickcheck2-dev (<< 2.14),
+ libghc-quickcheck2-prof,
+ libghc-attoparsec-dev,
+ libghc-base-compat-dev,
+ libghc-base-compat-prof,
+ libghc-base-orphans-dev (>= 0.5.3),
+ libghc-base-orphans-dev (<< 0.9),
+ libghc-base-orphans-prof,
+ libghc-base16-bytestring-dev,
+ libghc-base16-bytestring-prof,
+ libghc-dlist-dev,
+ libghc-generic-deriving-dev (>= 1.10),
+ libghc-generic-deriving-dev (<< 1.14),
+ libghc-generic-deriving-prof,
+ libghc-hashable-dev (>= 1.2.4.0),
+ libghc-hashable-time-dev (>= 0.2),
+ libghc-hashable-time-dev (<< 0.3),
+ libghc-hashable-time-prof,
+ libghc-integer-logarithms-dev (>= 1),
+ libghc-integer-logarithms-dev (<< 1.1),
+ libghc-integer-logarithms-prof,
+ libghc-quickcheck-instances-dev (>= 0.3.21),
+ libghc-quickcheck-instances-dev (<< 0.4),
+ libghc-quickcheck-instances-prof,
+ libghc-scientific-dev,
+ libghc-tagged-dev,
+ libghc-tasty-dev,
+ libghc-tasty-prof,
+ libghc-tasty-golden-dev,
+ libghc-tasty-golden-prof,
+ libghc-tasty-hunit-dev,
+ libghc-tasty-hunit-prof,
+ libghc-tasty-quickcheck-dev,
+ libghc-tasty-quickcheck-prof,
+ libghc-time-compat-dev,
+ libghc-unordered-containers-dev,
+ libghc-uuid-types-dev,
+ libghc-vector-dev,
+Build-Depends-Indep: ghc-doc,
+ libghc-attoparsec-doc,
+ libghc-base-compat-batteries-doc,
+ libghc-contravariant-doc,
+ libghc-dlist-doc,
+ libghc-hashable-doc,
+ libghc-primitive-doc,
+ libghc-scientific-doc,
+ libghc-tagged-doc,
+ libghc-th-abstraction-doc,
+ libghc-time-compat-doc,
+ libghc-unordered-containers-doc,
+ libghc-uuid-types-doc,
+ libghc-vector-doc,
+Standards-Version: 4.5.0
+Homepage: https://github.com/bos/aeson
+Vcs-Browser: https://salsa.debian.org/haskell-team/DHG_packages/tree/master/p/haskell-aeson
+Vcs-Git: https://salsa.debian.org/haskell-team/DHG_packages.git [p/haskell-aeson]
+
+Package: libghc-aeson-dev
+Architecture: any
+Depends:
+ ${haskell:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ ${haskell:Recommends},
+Suggests:
+ ${haskell:Suggests},
+Provides:
+ ${haskell:Provides},
+Description: Fast JSON parsing and encoding library${haskell:ShortBlurb}
+ It is a JSON parsing and encoding library optimized for ease of use
+ and high performance.
+ .
+ ${haskell:Blurb}
+
+Package: libghc-aeson-prof
+Architecture: any
+Depends:
+ ${haskell:Depends},
+ ${misc:Depends},
+Recommends:
+ ${haskell:Recommends},
+Suggests:
+ ${haskell:Suggests},
+Provides:
+ ${haskell:Provides},
+Description: Fast JSON parsing and encoding library${haskell:ShortBlurb}
+ It is a JSON parsing and encoding library optimized for ease of use
+ and high performance.
+ .
+ ${haskell:Blurb}
+
+Package: libghc-aeson-doc
+Architecture: all
+Section: doc
+Depends:
+ ${haskell:Depends},
+ ${misc:Depends},
+Recommends:
+ ${haskell:Recommends},
+Suggests:
+ ${haskell:Suggests},
+Description: Fast JSON parsing and encoding library${haskell:ShortBlurb}
+ It is a JSON parsing and encoding library optimized for ease of use
+ and high performance.
+ .
+ ${haskell:Blurb}
