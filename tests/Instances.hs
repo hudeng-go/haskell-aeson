@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -24,7 +25,6 @@ import qualified Data.HashMap.Strict as HM
 
 import Data.Orphans ()
 import Test.QuickCheck.Instances ()
-import Data.Hashable.Time ()
 
 -- "System" types.
 
@@ -153,8 +153,10 @@ instance Arbitrary EitherTextInt where
 instance Arbitrary (GADT String) where
     arbitrary = GADT <$> arbitrary
 
+#if !MIN_VERSION_base(4,16,0)
 instance Arbitrary OptionField where
     arbitrary = OptionField <$> arbitrary
+#endif
 
 
 instance ApproxEq Char where

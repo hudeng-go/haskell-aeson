@@ -12,27 +12,35 @@ import Data.Proxy (Proxy)
 import Data.Ratio (Ratio)
 import Data.Sequence (Seq)
 import Data.Tagged (Tagged)
+import Data.These (These (..))
 import Data.Time (Day, DiffTime, LocalTime, NominalDiffTime, TimeOfDay, UTCTime, ZonedTime)
+import Data.Time.Calendar.Month.Compat (Month)
+import Data.Time.Calendar.Quarter.Compat (Quarter, QuarterOfYear)
 import Data.Version (Version)
 import Data.Time.Calendar.Compat (CalendarDiffDays, DayOfWeek)
 import Data.Time.LocalTime.Compat (CalendarDiffTime)
 import Data.Time.Clock.System.Compat (SystemTime)
-import Instances ()
+import Data.Tuple.Solo (Solo)
 import Numeric.Natural (Natural)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (testProperty)
 import Types
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Short as ST
 import qualified Data.UUID.Types as UUID
+import qualified Data.Strict as S
+import qualified Data.Fix as F
 import PropUtils
 import PropertyRTFunctors
 
+import Instances ()
 
 roundTripTests :: TestTree
 roundTripTests =
   testGroup "roundTrip" [
-      testProperty "Bool" $ roundTripEq True
+      testProperty "Value" $ roundTripEq (undefined :: Value)
+    , testProperty "Bool" $ roundTripEq True
     , testProperty "Double" $ roundTripEq (1 :: Approx Double)
     , testProperty "Int" $ roundTripEq (1 :: Int)
     , testProperty "NonEmpty Char" $ roundTripEq (undefined :: NonEmpty Char)
@@ -42,6 +50,9 @@ roundTripTests =
     , testProperty "Lazy Text" $ roundTripEq LT.empty
     , testProperty "Foo" $ roundTripEq (undefined :: Foo)
     , testProperty "Day" $ roundTripEq (undefined :: Day)
+    , testProperty "Month" $ roundTripEq (undefined :: Month)
+    , testProperty "Quarter" $ roundTripEq (undefined :: Quarter)
+    , testProperty "QuarterOfYear" $ roundTripEq (undefined :: QuarterOfYear)
     , testProperty "BCE Day" $ roundTripEq (undefined :: BCEDay)
     , testProperty "DotNetTime" $ roundTripEq (undefined :: Approx DotNetTime)
     , testProperty "LocalTime" $ roundTripEq (undefined :: LocalTime)
@@ -64,6 +75,16 @@ roundTripTests =
     , testProperty "Rational" $ roundTripEq (undefined :: Rational)
     , testProperty "Ratio Int" $ roundTripEq (undefined :: Ratio Int)
     , testProperty "UUID" $ roundTripEq UUID.nil
+    , testProperty "These" $ roundTripEq (These 'x' True)
+    , testProperty "Fix" $ roundTripEq (undefined :: F.Fix (These Char))
+    , testProperty "Mu" $ roundTripEq (undefined :: F.Mu (These Char))
+    , testProperty "Nu" $ roundTripEq (undefined :: F.Nu (These Char))
+    , testProperty "Strict Pair" $ roundTripEq (undefined :: S.Pair Int Char)
+    , testProperty "Strict Either" $ roundTripEq (undefined :: S.Either Int Char)
+    , testProperty "Strict These" $ roundTripEq (undefined :: S.These Int Char)
+    , testProperty "Strict Maybe" $ roundTripEq (undefined :: S.Maybe Int)
+    , testProperty "Solo Int" $ roundTripEq (undefined :: Solo Int)
+    , testProperty "ShortText" $ roundTripEq (undefined :: ST.ShortText)
     , roundTripFunctorsTests
     , testGroup "ghcGenerics" [
         testProperty "OneConstructor" $ roundTripEq OneConstructor

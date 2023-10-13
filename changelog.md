@@ -1,4 +1,93 @@
-For the latest version of this document, please see [https://github.com/bos/aeson/blob/master/changelog.md](https://github.com/bos/aeson/blob/master/changelog.md).
+For the latest version of this document, please see [https://github.com/haskell/aeson/blob/master/changelog.md](https://github.com/haskell/aeson/blob/master/changelog.md).
+
+### 2.0.3.0
+
+* `text-2.0` support
+* `bytestring-0.11.2.0` support
+* Rewrite pure text literal unescaper.
+* Add `QuickCheck`'s `Arbitrary`, `CoArbitrary` and `Function` instances
+
+### 2.0.2.0
+
+* Add `IsList (KeyMap v)` instance.
+* Add `toMapText` and `fromMapText` to `Data.Aeson.KeyMap`.
+* Add `ShortText` instances
+* Add `Solo` instances
+
+### 2.0.1.0
+
+* Add `FromJSON KeyMap` instance.
+* Make `ordered-keymap` on by default.
+
+### 2.0.0.0
+
+* Remove forced `-O2` and then unneeded `fast` flag.
+  Also remove most of `INLINE` pragmas.
+  In the effect, `aeson` compiles almost twice as fast.
+
+  To get `fast` compilation effect cabal-install users may specify `optimization: False`.
+
+* Make map type used by Object abstract so the underlying implementation can
+  be modified, thanks to Callan McGill
+
+* Add `ordered-keymap` flag allowing to change the underlying implementation of object `KeyMap`.
+
+* Drop GHC-7 support
+
+* Remove Data.Aeson.Encode module
+
+* `Double` and `Float` infinities are encoded as `"+inf"` and `"-inf"`.
+  Change `To/FromJSONKey` instances to use `"+inf"` and `"-inf"` too.
+
+* `FromJSON ()` and `FromJSON (Proxy tag)` accept any JSON value.
+
+
+### 1.5.6.0
+* Make `Show Value` instance print object keys in lexicographic order.
+
+### 1.5.5.1
+* Fix a bug in `FromJSON QuarterOfYear` instance.
+
+### 1.5.5.0
+* Add instances for `Month`, `Quarter` and `QuarterOfYear` (from `time-1.11`), thanks to Oleg Grenrus.
+
+* The aeson repository has been moved to the haskell github organization!
+
+#### 1.5.4.1
+* Use `Text.Encoding.decodeLatin1` to speed up ASCII string decoding, thanks to Dmitry Ivanov.
+* Support `bytestring 0.11.*` and `th-abstraction 0.4.*`, thanks to Oleg Grenrus.
+
+### 1.5.4.0
+
+* Add instances for `ToJSONKey` and `FromJSONKey` to `Const`, thanks to Dan Fithian.
+* Add support for template-haskell 2.17, thanks to Galen Huntington.
+* Documentation typo fix, thanks to Jean-Baptiste Mazon.
+
+### 1.5.3.0
+
+* Add instances for types in `strict` and `data-fix` packages, thanks to Oleg Grenrus.
+* CPP cleanup, thanks to Oleg Grenrus.
+* Instances for `dlist`'s `Data.DList.DNonEmpty.DNonEmpty`, thanks to Oleg Grenrus.
+
+### 1.5.2.0
+
+* Add `Ord Value` instance, thanks to Oleg Grenrus.
+* Export `rejectUnknownFields` from `Data.Aeson`
+
+### 1.5.1.0
+
+* Add instances for `these`, thanks to Oleg Grenrus.
+
+## 1.5.0.0
+
+* Fix bug in `rejectUnknownFields` not respecting `fieldLabelModifier`, thanks to Markus Schirp.
+* `GFromJSON` members are no longer exported from `Data.Aeson(.Types)`, if you are using `gParseJSON` consider switching to `gParseJSON'`, thanks to Oleg Grenrus.
+* Aeson no longer accepts unescaped control characters, thanks to Oleg Grenrus.
+* Remove `CoerceText` since GHC >=7.8 has `Coercible`, thanks to Oleg Grenrus.
+* Rename the `GToJSON` class to `GToJSON'` and expose it, thanks to Oleg Grenrus.
+
+Closed tickets: https://github.com/bos/aeson/milestone/21
+
 
 #### 1.4.7.1
 

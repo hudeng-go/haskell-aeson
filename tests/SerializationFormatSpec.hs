@@ -17,7 +17,7 @@ module SerializationFormatSpec
 import Prelude.Compat
 
 import Control.Applicative (Const(..))
-import Data.Aeson (FromJSON(..), decode, encode, genericParseJSON, genericToEncoding, genericToJSON)
+import Data.Aeson (FromJSON(..), decode, eitherDecode, encode, genericParseJSON, genericToEncoding, genericToJSON)
 import Data.Aeson.Types (Options(..), SumEncoding(..), ToJSON(..), defaultOptions)
 import Data.Fixed (Pico)
 import Data.Foldable (for_, toList)
@@ -29,10 +29,15 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Proxy (Proxy(..))
 import Data.Scientific (Scientific)
 import Data.Tagged (Tagged(..))
+import Data.Text (Text)
+import Data.These (These (..))
 import Data.Time (fromGregorian)
+import Data.Time.Calendar.Month.Compat (fromYearMonth)
+import Data.Time.Calendar.Quarter.Compat (fromYearQuarter, QuarterOfYear (..))
 import Data.Time.Calendar.Compat (CalendarDiffDays (..), DayOfWeek (..))
 import Data.Time.LocalTime.Compat (CalendarDiffTime (..))
 import Data.Time.Clock.System.Compat (SystemTime (..))
+import Data.Tuple.Solo (Solo (..))
 import Data.Word (Word8)
 import GHC.Generics (Generic)
 import Instances ()
@@ -53,6 +58,10 @@ import qualified Data.Set as Set
 import qualified Data.Tree as Tree
 import qualified Data.UUID.Types as UUID
 import qualified Data.Vector as Vector
+import qualified Data.Fix as F
+import qualified Data.Strict as S
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Short as ST
 
 tests :: [TestTree]
 tests =
@@ -84,6 +93,10 @@ jsonExamples =
   , example "DList" "[1,2,3]"  (DList.fromList [1, 2, 3] :: DList.DList Int)
   , example "()" "[]"  ()
 
+  , example "Text" "\"foo\"" ("foo" :: Text)
+  , example "Lazy Text" "\"foo\"" ("foo" :: LT.Text)
+  , example "ShortText" "\"foo\"" ("foo" :: ST.ShortText)
+
   , ndExample "HashMap Int Int"
         [ "{\"0\":1,\"2\":3}", "{\"2\":3,\"0\":1}"]
         (HM.fromList [(0,1),(2,3)] :: HM.HashMap Int Int)
@@ -104,6 +117,8 @@ jsonExamples =
         (M.fromList [(map pure "ab",1),(map pure "cd",3)] :: M.Map [I Char] Int)
 
   , example "nan :: Double" "null"  (Approx $ 0/0 :: Approx Double)
+  , example "+inf :: Double" "\"+inf\"" (Approx $ 1/0 :: Approx Double)
+  , example "-inf :: Double" "\"-inf\"" (Approx $ -1/0 :: Approx Double)
 
   , example "Ordering LT" "\"LT\"" LT
   , example "Ordering EQ" "\"EQ\"" EQ
@@ -125,15 +140,20 @@ jsonExamples =
 
   -- Three separate cases, as ordering in HashMap is not defined
   , example "HashMap Float Int, NaN" "{\"NaN\":1}"  (Approx $ HM.singleton (0/0) 1 :: Approx (HM.HashMap Float Int))
-  , example "HashMap Float Int, Infinity" "{\"Infinity\":1}"  (HM.singleton (1/0) 1 :: HM.HashMap Float Int)
-  , example "HashMap Float Int, +Infinity" "{\"-Infinity\":1}"  (HM.singleton (negate 1/0) 1 :: HM.HashMap Float Int)
+  , example "HashMap Float Int, Infinity" "{\"+inf\":1}"  (HM.singleton (1/0) 1 :: HM.HashMap Float Int)
+  , example "HashMap Float Int, +Infinity" "{\"-inf\":1}"  (HM.singleton (negate 1/0) 1 :: HM.HashMap Float Int)
 
   -- Functors
   , example "Identity Int" "1"  (pure 1 :: Identity Int)
+  , example "Solo Int" "1"      (pure 1 :: Solo Int)
 
   , example "Identity Char" "\"x\""      (pure 'x' :: Identity Char)
   , example "Identity String" "\"foo\""  (pure "foo" :: Identity String)
   , example "[Identity Char]" "\"xy\""   ([pure 'x', pure 'y'] :: [Identity Char])
+
+  , example "Solo Char" "\"x\""      (pure 'x' :: Solo Char)
+  , example "Solo String" "\"foo\""  (pure "foo" :: Solo String)
+  , example "[Solo Char]" "\"xy\""   ([pure 'x', pure 'y'] :: [Solo Char])
 
   , example "Maybe Char" "\"x\""              (pure 'x' :: Maybe Char)
   , example "Maybe String" "\"foo\""          (pure "foo" :: Maybe String)
@@ -144,6 +164,20 @@ jsonExamples =
   , example "Day; year == 0" "\"0000-02-20\""           (fromGregorian 0       2  20)
   , example "Day; year < 0" "\"-0234-01-01\""           (fromGregorian (-234)  1  1)
   , example "Day; year < -1000" "\"-1234-01-01\""       (fromGregorian (-1234) 1  1)
+
+  , example "Month; year >= 1000" "\"1999-10\""        (fromYearMonth 1999    10)
+  , example "Month; year > 0 && < 1000" "\"0500-03\""  (fromYearMonth 500     3)
+  , example "Month; year == 0" "\"0000-02\""           (fromYearMonth 0       2)
+  , example "Month; year < 0" "\"-0234-01\""           (fromYearMonth (-234)  1)
+  , example "Month; year < -1000" "\"-1234-01\""       (fromYearMonth (-1234) 1)
+
+  , example "Quarter; year >= 1000" "\"1999-q1\""        (fromYearQuarter 1999    Q1)
+  , example "Quarter; year > 0 && < 1000" "\"0500-q4\""  (fromYearQuarter 500     Q4)
+  , example "Quarter; year == 0" "\"0000-q3\""           (fromYearQuarter 0       Q3)
+  , example "Quarter; year < 0" "\"-0234-q2\""           (fromYearQuarter (-234)  Q2)
+  , example "Quarter; year < -1000" "\"-1234-q1\""       (fromYearQuarter (-1234) Q1)
+
+  , example "QuarterOfYear" "\"q1\"" Q1
 
   , example "Product I Maybe Int" "[1,2]"         (Pair (pure 1) (pure 2) :: Product I Maybe Int)
   , example "Product I Maybe Int" "[1,null]"      (Pair (pure 1) Nothing :: Product I Maybe Int)
@@ -193,8 +227,10 @@ jsonExamples =
   , example "Semigroup.First Int" "2" (pure 2 :: Semigroup.First Int)
   , example "Semigroup.Last Int" "2" (pure 2 :: Semigroup.Last Int)
   , example "Semigroup.WrappedMonoid Int" "2" (Semigroup.WrapMonoid 2 :: Semigroup.WrappedMonoid Int)
+#if !MIN_VERSION_base(4,16,0)
   , example "Semigroup.Option Just" "2" (pure 2 :: Semigroup.Option Int)
   , example "Semigroup.Option Nothing" "null" (Semigroup.Option (Nothing :: Maybe Bool))
+#endif
 
   -- time 1.9
   , example "SystemTime" "123.123456789" (MkSystemTime 123 123456789)
@@ -208,14 +244,41 @@ jsonExamples =
     [ "{\"months\":12,\"days\":20}", "{\"days\":20,\"months\":12}" ]
     (CalendarDiffDays 12 20)
   , example "DayOfWeek" "\"monday\"" Monday
+
+  -- these
+  , example "These: This" "{\"This\":\"x\"}" (This 'x'   :: These Char Bool)
+  , example "These: That" "{\"That\":true}"  (That True  :: These Char Bool)
+  , ndExample "These"
+    [ "{\"This\":\"y\",\"That\":false}"
+    , "{\"That\":false,\"This\":\"y\"}"
+    ]
+    (These 'y' False)
+
+  -- data-fix and strict
+  , ndExample "Fix Strict.These"
+    [ "{\"This\":true,\"That\":{\"That\":{\"This\":false}}}"
+    , "{\"That\":{\"That\":{\"This\":false}},\"This\":true}"
+    ]
+    (F.Fix (S.These True (F.Fix (S.That (F.Fix (S.This False))))))
+
+  -- Mu and Nu are similar.
+  , ndExample "Mu Strict.These"
+    [ "{\"This\":true,\"That\":{\"That\":{\"This\":false}}}"
+    , "{\"That\":{\"That\":{\"This\":false}},\"This\":true}"
+    ]
+    $ F.unfoldMu F.unFix $ F.Fix (S.These True (F.Fix (S.That (F.Fix (S.This False)))))
+
+  , ndExample "Nu Strict.These"
+    [ "{\"This\":true,\"That\":{\"That\":{\"This\":false}}}"
+    , "{\"That\":{\"That\":{\"This\":false}},\"This\":true}"
+    ]
+    $ F.unfoldNu F.unFix $ F.Fix (S.These True (F.Fix (S.That (F.Fix (S.This False)))))
   ]
 
+-- encodings which clash (like infinities prior aeson-2.0)
 jsonEncodingExamples :: [Example]
 jsonEncodingExamples =
   [
-  -- infinities cannot be recovered, null is decoded as NaN
-    example "inf :: Double" "null" (Approx $ 1/0 :: Approx Double)
-  , example "-inf :: Double" "null" (Approx $ -1/0 :: Approx Double)
   ]
 
 jsonDecodingExamples :: [Example]
@@ -274,7 +337,8 @@ assertJsonExample (Example name bss val val') = testCase name $ do
     assertSomeEqual "encode"           bss        (encode val)
     assertSomeEqual "encode/via value" bss        (encode $ toJSON val)
     for_ bss $ \bs ->
-        assertEqual "decode"           (Just val') (decode bs)
+        assertEqual "decode"           (Right val') (eitherDecode bs)
+
 assertJsonExample (MaybeExample name bs mval) = testCase name $
     assertEqual "decode" mval (decode bs)
 

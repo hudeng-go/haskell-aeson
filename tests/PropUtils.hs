@@ -12,6 +12,8 @@ import Data.Aeson.Internal (IResult(..), formatError, ifromJSON, iparse)
 import qualified Data.Aeson.Internal as I
 import Data.Aeson.Parser (value)
 import Data.Aeson.Types
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KM
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable)
 import Data.Int (Int8)
@@ -21,9 +23,9 @@ import Encoders
 import Instances ()
 import Test.QuickCheck (Arbitrary(..), Property, Testable, (===), (.&&.), counterexample)
 import Types
+import Text.Read (readMaybe)
 import qualified Data.Attoparsec.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.HashMap.Strict as H
 import qualified Data.Map as Map
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -74,6 +76,9 @@ roundTripNoEnc eq _ i =
 roundTripEq :: (Eq a, FromJSON a, ToJSON a, Show a) => a -> a -> Property
 roundTripEq x y = roundTripEnc (===) x y .&&. roundTripNoEnc (===) x y
 
+roundtripReadShow :: Value -> Property
+roundtripReadShow v = readMaybe (show v) === Just v
+
 -- We test keys by encoding HashMap and Map with it
 roundTripKey
     :: (Ord a, Hashable a, FromJSONKey a, ToJSONKey a, Show a)
@@ -119,7 +124,7 @@ parserCatchErrorProp path msg =
     result :: Result (I.JSONPath, String)
     result = parse (const parser) ()
 
-    jsonPath = map (I.Key . T.pack) path
+    jsonPath = map (I.Key . Key.fromString) path
 
 -- | Perform a structural comparison of the results of two encoding
 -- methods. Compares decoded values to account for HashMap-driven
@@ -174,8 +179,8 @@ is2ElemArray (Array v) = V.length v == 2 && isString (V.head v)
 is2ElemArray _         = False
 
 isTaggedObjectValue :: Value -> Bool
-isTaggedObjectValue (Object obj) = "tag"      `H.member` obj &&
-                                   "contents" `H.member` obj
+isTaggedObjectValue (Object obj) = "tag"      `KM.member` obj &&
+                                   "contents" `KM.member` obj
 isTaggedObjectValue _            = False
 
 isNullaryTaggedObject :: Value -> Bool
@@ -185,11 +190,11 @@ isTaggedObject :: Value -> Property
 isTaggedObject = checkValue isTaggedObject'
 
 isTaggedObject' :: Value -> Bool
-isTaggedObject' (Object obj) = "tag" `H.member` obj
+isTaggedObject' (Object obj) = "tag" `KM.member` obj
 isTaggedObject' _            = False
 
 isObjectWithSingleField :: Value -> Bool
-isObjectWithSingleField (Object obj) = H.size obj == 1
+isObjectWithSingleField (Object obj) = KM.size obj == 1
 isObjectWithSingleField _            = False
 
 -- | is untaggedValue of EitherTextInt
