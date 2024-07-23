@@ -55,7 +55,7 @@ Build-Depends:
  libghc-text-short-dev (<< 0.2),
  libghc-text-short-prof,
  libghc-th-abstraction-dev (>= 0.3.0.0),
- libghc-th-abstraction-dev (<< 0.6),
+ libghc-th-abstraction-dev (<< 0.8),
  libghc-th-abstraction-prof,
  libghc-these-dev (>= 1.1.1.1),
  libghc-these-dev (<< 1.3),
