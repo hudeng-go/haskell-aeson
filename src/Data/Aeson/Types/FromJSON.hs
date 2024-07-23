@@ -118,6 +118,9 @@ import Data.Word (Word16, Word32, Word64, Word8)
 import Foreign.Storable (Storable)
 import Foreign.C.Types (CTime (..))
 import GHC.Generics
+#if !MIN_VERSION_base(4,17,0)
+import GHC.Generics.Generically (Generically (..), Generically1 (..))
+#endif
 import Numeric.Natural (Natural)
 import Text.ParserCombinators.ReadP (readP_to_S)
 import Unsafe.Coerce (unsafeCoerce)
@@ -362,6 +365,12 @@ genericLiftParseJSON opts pj pjl = fmap to1 . gParseJSON opts (From1Args pj pjl)
 -- instance 'FromJSON' Coord
 -- @
 --
+-- or using the [DerivingVia extension](https://downloads.haskell.org/ghc/9.2.3/docs/html/users_guide/exts/deriving_via.html)
+--
+-- @
+-- deriving via 'Generically' Coord instance 'FromJSON' Coord
+-- @
+--
 -- The default implementation will be equivalent to
 -- @parseJSON = 'genericParseJSON' 'defaultOptions'@; if you need different
 -- options, you can customize the generic decoding by defining:
@@ -385,6 +394,10 @@ class FromJSON a where
           zipWithM (parseIndexedJSON parseJSON) [0..]
         . V.toList
         $ a
+
+-- | @since 2.1.0.0
+instance (Generic a, GFromJSON Zero (Rep a)) => FromJSON (Generically a) where
+    parseJSON = coerce (genericParseJSON defaultOptions :: Value -> Parser a)
 
 -------------------------------------------------------------------------------
 --  Classes and types for map keys
@@ -451,7 +464,7 @@ instance Functor FromJSONKeyFunction where
 -- are derived with generalized newtype deriving.
 -- compatible with 'Text' i.e. hash values be equal for wrapped values as well.
 --
--- On pre GHC 7.8 this is unconstrainted function.
+-- On pre GHC 7.8 this is unconstrained function.
 fromJSONKeyCoerce ::
     Coercible Text a =>
     FromJSONKeyFunction a
@@ -509,7 +522,7 @@ instance (ConstructorNames f, SumFromString f) => GFromJSONKey f where
 
 -- | Fail parsing due to a type mismatch, with a descriptive message.
 --
--- The following wrappers should generally be prefered:
+-- The following wrappers should generally be preferred:
 -- 'withObject', 'withArray', 'withText', 'withBool'.
 --
 -- ==== Error message example
@@ -544,7 +557,7 @@ typeOf v = case v of
     Null     -> "Null"
 
 -------------------------------------------------------------------------------
--- Lifings of FromJSON and ToJSON to unary and binary type constructors
+-- Liftings of FromJSON and ToJSON to unary and binary type constructors
 -------------------------------------------------------------------------------
 
 -- | Lifting of the 'FromJSON' class to unary type constructors.
@@ -575,6 +588,12 @@ typeOf v = case v of
 -- instance 'FromJSON' a => 'FromJSON1' (Pair a)
 -- @
 --
+-- or
+--
+-- @
+-- deriving via 'Generically1' (Pair a) instance 'FromJSON1' (Pair a)
+-- @
+--
 -- If the default implementation doesn't give exactly the results you want,
 -- you can customize the generic decoding with only a tiny amount of
 -- effort, using 'genericLiftParseJSON' with your preferred 'Options':
@@ -596,6 +615,11 @@ class FromJSON1 f where
 
     liftParseJSONList :: (Value -> Parser a) -> (Value -> Parser [a]) -> Value -> Parser [f a]
     liftParseJSONList f g v = listParser (liftParseJSON f g) v
+
+-- | @since 2.1.0.0
+instance (Generic1 f, GFromJSON One (Rep1 f)) => FromJSON1 (Generically1 f) where
+    liftParseJSON :: forall a. (Value -> Parser a) -> (Value -> Parser [a]) -> Value -> Parser (Generically1 f a)
+    liftParseJSON = coerce (genericLiftParseJSON defaultOptions :: (Value -> Parser a) -> (Value -> Parser [a]) -> Value -> Parser (f a))
 
 -- | Lift the standard 'parseJSON' function through the type constructor.
 parseJSON1 :: (FromJSON1 f, FromJSON a) => Value -> Parser (f a)
@@ -953,6 +977,11 @@ class GFromJSON' arity f where
     gParseJSON' :: TypeName :* Options :* FromArgs arity a
                 -> Value
                 -> Parser (f a)
+
+-- | No constructors.
+instance GFromJSON' arity V1 where
+    gParseJSON' _ _ = fail "Attempted to parse empty type"
+    {-# INLINE gParseJSON' #-}
 
 -- | Single constructor.
 instance ( ConsFromJSON arity a
@@ -1513,6 +1542,10 @@ instance (FromJSON a, FromJSON b) => FromJSON (Either a b) where
 instance FromJSON Void where
     parseJSON _ = fail "Cannot parse Void"
 
+-- | @since 2.1.2.0
+instance FromJSONKey Void where
+    fromJSONKey = FromJSONKeyTextParser $ \_ -> fail "Cannot parse Void"
+
 instance FromJSON Bool where
     parseJSON (Bool b) = pure b
     parseJSON v = typeMismatch "Bool" v
@@ -1553,8 +1586,8 @@ instance FromJSON Double where
 instance FromJSONKey Double where
     fromJSONKey = FromJSONKeyTextParser $ \t -> case t of
         "NaN"   -> pure (0/0)
-        "-inf"  -> pure (1/0)
-        "+inf"  -> pure (negate 1/0)
+        "+inf"  -> pure (1/0)
+        "-inf"  -> pure (negate 1/0)
         _       -> Scientific.toRealFloat <$> parseScientificText t
 
 instance FromJSON Float where
@@ -1697,7 +1730,7 @@ instance FromJSONKey LT.Text where
 
 -- | @since 2.0.2.0
 instance FromJSON ST.ShortText where
-    parseJSON = withText "Lazy Text" $ pure . ST.fromText
+    parseJSON = withText "ShortText" $ pure . ST.fromText
 
 -- | @since 2.0.2.0
 instance FromJSONKey ST.ShortText where

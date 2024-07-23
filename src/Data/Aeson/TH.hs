@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -75,6 +76,9 @@ Please note that you can derive instances for tuples using the following syntax:
 $('deriveJSON' 'defaultOptions' ''(,,,))
 @
 
+If you derive `ToJSON` for a type that has no constructors, the splice will
+require enabling @EmptyCase@ to compile.
+
 -}
 module Data.Aeson.TH
     (
@@ -134,7 +138,7 @@ import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import qualified Data.Monoid as Monoid
 import Data.Set (Set)
 import Language.Haskell.TH hiding (Arity)
-import Language.Haskell.TH.Datatype
+import Language.Haskell.TH.Datatype as Datatype
 #if MIN_VERSION_template_haskell(2,8,0) && !(MIN_VERSION_template_haskell(2,10,0))
 import Language.Haskell.TH.Syntax (mkNameG_tc)
 #endif
@@ -327,8 +331,8 @@ consToValue :: ToJSONFun
             -- ^ Constructors for which to generate JSON generating code.
             -> Q Exp
 
-consToValue _ _ _ _ [] = error $ "Data.Aeson.TH.consToValue: "
-                             ++ "Not a single constructor given!"
+consToValue _ _ _ _ [] =
+    [| \x -> case x of {} |]
 
 consToValue target jc opts instTys cons = autoletE liftSBS $ \letInsert -> do
     value <- newName "value"
@@ -688,8 +692,8 @@ consFromJSON :: JSONClass
              -- ^ Constructors for which to generate JSON parsing code.
              -> Q Exp
 
-consFromJSON _ _ _ _ [] = error $ "Data.Aeson.TH.consFromJSON: "
-                                ++ "Not a single constructor given!"
+consFromJSON _ _ _ _ [] =
+    [| \_ -> fail "Attempted to parse empty type" |]
 
 consFromJSON jc tName opts instTys cons = do
   value <- newName "value"
@@ -1154,7 +1158,7 @@ instance {-# OVERLAPPABLE #-} LookupField a where
 
 instance {-# INCOHERENT #-} LookupField (Maybe a) where
     lookupField pj _ _ = parseOptionalFieldWith pj
- 
+
 #if !MIN_VERSION_base(4,16,0)
 instance {-# INCOHERENT #-} LookupField (Semigroup.Option a) where
     lookupField pj tName rec obj key =
@@ -1452,6 +1456,9 @@ buildTypeInstance tyConName jc dataCxt varTysOrig variant = do
                          Newtype         -> False
                          DataInstance    -> True
                          NewtypeInstance -> True
+#if MIN_VERSION_th_abstraction(0,5,0)
+                         Datatype.TypeData -> False
+#endif
 
         remainingTysOrigSubst' :: [Type]
         -- See Note [Kind signatures in derived instances] for an explanation

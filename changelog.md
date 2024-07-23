@@ -1,5 +1,41 @@
 For the latest version of this document, please see [https://github.com/haskell/aeson/blob/master/changelog.md](https://github.com/haskell/aeson/blob/master/changelog.md).
 
+### 2.1.2.1
+
+* Support `th-abstraction-0.5`
+
+### 2.1.2.0
+
+* Add `throwDecode :: (MonadThrow m, FromJSON a) => ByteString -> m a`
+  and variants.
+* Add `Data.Aeson.Decoding` which uses new underlying tokenizer / parser.
+  This parser seems to be faster, and the intermediate `Tokens` streams
+  allow to differentiate more than `Value` if needed.
+  If no critical issues is found, this parser will become the default
+  in next major `aeson` version.
+* Support deriving for empty datatypes (such as `Void` and `V1`)
+  in `FromJSON` and `ToJSON`.
+* Add `To/FromJSONKey Void` instances
+* Fix `FromJSONKey Double` handling of infinities
+
+### 2.1.1.0
+
+- Add `Data.Aeson.KeyMap.!?` (flipped) alias to `Data.Aeson.KeyMap.lookup`.
+- Add `Data.Aeson.KeyMap.insertWith` function.
+- Use `unsafeDupablePerformIO` instead of incorrect `accursedUnutterablePerformIO` in creation of keys in TH serialisation.
+  This fixes a bug in TH deriving, e.g. when `Strict` pragma was enabled.
+
+### 2.1.0.0
+
+- Change time instances of types with year (`Day`, `UTCTime`) to require years with at least 4 digits.
+- Change `KeyValue` instances to be more general (and use equality to constraint them) instead of being more lax flexible instances.
+- Export `Key` type also from `Data.Aeson.KeyMap` module.
+- Export `mapWithKey` from `Data.Aeson.KeyMap` module.
+- Export `ifromJSON` and `iparse` from `Data.Aeson.Types`. Add `iparseEither`.
+- Add `MonadFix Parser` instance.
+- Make `Semigroup Series` slightly lazier
+- Add instances for `Generically` type
+
 ### 2.0.3.0
 
 * `text-2.0` support

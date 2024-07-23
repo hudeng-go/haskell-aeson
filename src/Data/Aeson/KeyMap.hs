@@ -8,6 +8,8 @@
 
 -- |
 -- An abstract interface for maps from JSON keys to values.
+--
+-- @since 2.0.0.0
 
 module Data.Aeson.KeyMap (
     -- * Map Type
@@ -16,6 +18,7 @@ module Data.Aeson.KeyMap (
     -- * Query
     null,
     lookup,
+    (!?),
     size,
     member,
 
@@ -25,6 +28,7 @@ module Data.Aeson.KeyMap (
 
     -- ** Insertion
     insert,
+    insertWith,
 
     -- * Deletion
     delete,
@@ -65,6 +69,7 @@ module Data.Aeson.KeyMap (
     -- * Traversal
     -- ** Map
     map,
+    mapWithKey,
     mapKeyVal,
     traverse,
     traverseWithKey,
@@ -85,6 +90,9 @@ module Data.Aeson.KeyMap (
     filterWithKey,
     mapMaybe,
     mapMaybeWithKey,
+
+    -- * Key Type
+    Key,
 ) where
 
 -- Import stuff from Prelude explicitly
@@ -186,11 +194,19 @@ lookup t tm = M.lookup t (unKeyMap tm)
 insert :: Key -> v -> KeyMap v -> KeyMap v
 insert k v tm = KeyMap (M.insert k v (unKeyMap tm))
 
+-- | Insert with a function combining new and old values, taken in that order.
+--
+-- @since 2.1.1.0
+insertWith :: (a -> a -> a) -> Key -> a -> KeyMap a -> KeyMap a
+insertWith f k v m = KeyMap (M.insertWith f k v (unKeyMap m))
+
 -- | Map a function over all values in the map.
 map :: (a -> b) -> KeyMap a -> KeyMap b
 map = fmap
 
 -- | Map a function over all values in the map.
+--
+-- @since 2.1.0.0
 mapWithKey :: (Key -> a -> b) -> KeyMap a -> KeyMap b
 mapWithKey f (KeyMap m) = KeyMap (M.mapWithKey f m)
 
@@ -234,6 +250,10 @@ fromListWith op = KeyMap . M.fromListWith op
 -- |  Construct a map with the supplied mappings. If the
 -- list contains duplicate mappings, the later mappings take
 -- precedence.
+--
+-- >>> fromList [("a", 'x'), ("a", 'y')]
+-- fromList [("a",'y')]
+--
 fromList :: [(Key, v)] -> KeyMap v
 fromList = KeyMap . M.fromList
 
@@ -245,7 +265,7 @@ toList = M.toList . unKeyMap
 
 -- | Return a list of this map' elements.
 --
--- @since 2.0.2.0
+-- @since 2.0.3.0
 elems :: KeyMap v -> [v]
 elems = M.elems . unKeyMap
 
@@ -387,11 +407,19 @@ lookup t tm = H.lookup t (unKeyMap tm)
 insert :: Key -> v -> KeyMap v -> KeyMap v
 insert k v tm = KeyMap (H.insert k v (unKeyMap tm))
 
+-- | Insert with a function combining new and old values, taken in that order.
+--
+-- @since 2.1.1.0
+insertWith :: (a -> a -> a) -> Key -> a -> KeyMap a -> KeyMap a
+insertWith f k v m = KeyMap (H.insertWith f k v (unKeyMap m))
+
 -- | Map a function over all values in the map.
 map :: (a -> b) -> KeyMap a -> KeyMap b
 map = fmap
 
 -- | Map a function over all values in the map.
+--
+-- @since 2.1.0.0
 mapWithKey :: (Key -> a -> b) -> KeyMap a -> KeyMap b
 mapWithKey f (KeyMap m) = KeyMap (H.mapWithKey f m)
 
@@ -446,7 +474,7 @@ toList = H.toList . unKeyMap
 
 -- | Return a list of this map' elements.
 --
--- @since 2.0.2.0
+-- @since 2.0.3.0
 elems :: KeyMap v -> [v]
 elems = H.elems . unKeyMap
 
@@ -540,6 +568,16 @@ mapMaybeWithKey f (KeyMap m) = KeyMap (H.mapMaybeWithKey f m)
 -------------------------------------------------------------------------------
 -- combinators using existing abstractions
 -------------------------------------------------------------------------------
+
+-- | Return the value to which the specified key is mapped,
+-- or Nothing if this map contains no mapping for the key.
+--
+-- This is a flipped version of 'lookup'.
+--
+-- @since 2.1.1.0
+--
+(!?) :: KeyMap v -> Key -> Maybe v
+(!?) m k = lookup k m
 
 -- | Generalized union with combining function.
 alignWith :: (These a b -> c) -> KeyMap a -> KeyMap b -> KeyMap c
